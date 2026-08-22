@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   SignedIn,
   SignedOut,
@@ -9,6 +9,13 @@ import {
 } from '@clerk/clerk-react';
 
 const GOOGLE_SHEETS_API_URL = "https://script.google.com/macros/s/AKfycbzigJhUDyKaEnzGeMOlf0cdjB_598zD_4qJBuLuh4piloC-raBnSn8jYAzWUL7VzLl2/exec";
+
+// Helper function to safely render star ratings without encoding corruption
+const renderStars = (rating) => {
+  const filledStar = "\u2605"; // ★
+  const emptyStar = "\u2606";  // ☆
+  return filledStar.repeat(rating) + emptyStar.repeat(5 - rating);
+};
 
 export default function App() {
   const { user, isLoaded } = useUser();
@@ -35,7 +42,7 @@ export default function App() {
   ]);
   const [newMessage, setNewMessage] = useState('');
 
-  // Ratings State (Pre-populated with 10 sample reviews)
+  // Ratings State (10 sample reviews)
   const [reviews, setReviews] = useState([
     { id: 1, name: 'Sarah M.', rating: 5, comment: 'Writer Dan delivered my MATH 210 paper 2 days early. Flawless work!' },
     { id: 2, name: 'David K.', rating: 5, comment: 'Extremely professional service. Saved my grade on my nursing research paper.' },
@@ -193,7 +200,7 @@ export default function App() {
             <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>Logged in as {userEmail}</p>
           </div>
           <a href="https://sheets.google.com" target="_blank" rel="noreferrer" style={styles.sheetBtn}>
-            Open Sheets Database ?
+            Open Sheets Database ↗
           </a>
         </div>
       )}
@@ -300,20 +307,20 @@ export default function App() {
           </SignedOut>
         </div>
 
-        {/* Ratings and Reviews Section */}
+        {/* Ratings Section */}
         <div style={{ ...styles.card, marginTop: '2rem' }}>
-          <h2 style={styles.cardHeader}>Student Ratings & Feedback ({reviews.length})</h2>
+          <h2 style={styles.cardHeader}>Ratings</h2>
 
           <SignedIn>
             <form onSubmit={handleAddReview} style={{ ...styles.form, marginBottom: '2rem' }}>
               <div style={styles.field}>
                 <label style={styles.label}>Leave a Rating</label>
                 <select value={newRating} onChange={(e) => setNewRating(e.target.value)} style={styles.input}>
-                  <option value="5">????? (5 Stars - Excellent)</option>
-                  <option value="4">????? (4 Stars - Good)</option>
-                  <option value="3">????? (3 Stars - Average)</option>
-                  <option value="2">????? (2 Stars - Below Average)</option>
-                  <option value="1">????? (1 Star - Poor)</option>
+                  <option value="5">5 Stars (Excellent)</option>
+                  <option value="4">4 Stars (Good)</option>
+                  <option value="3">3 Stars (Average)</option>
+                  <option value="2">2 Stars (Below Average)</option>
+                  <option value="1">1 Star (Poor)</option>
                 </select>
               </div>
 
@@ -341,8 +348,8 @@ export default function App() {
               <div key={rev.id} style={styles.reviewCard}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontWeight: '700', color: '#38bdf8' }}>{rev.name}</span>
-                  <span style={{ color: '#f59e0b', fontSize: '0.9rem' }}>
-                    {'?'.repeat(rev.rating)}{'?'.repeat(5 - rev.rating)}
+                  <span style={{ color: '#f59e0b', fontSize: '1rem', letterSpacing: '2px' }}>
+                    {renderStars(rev.rating)}
                   </span>
                 </div>
                 <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', color: '#cbd5e1' }}>{rev.comment}</p>
@@ -367,7 +374,7 @@ export default function App() {
           <div style={styles.chatBox}>
             <div style={styles.chatHeader}>
               <span>Chat with Writer</span>
-              <button onClick={() => setIsChatOpen(false)} style={styles.closeChatBtn}>?</button>
+              <button onClick={() => setIsChatOpen(false)} style={styles.closeChatBtn}>✕</button>
             </div>
             <div style={styles.chatBody}>
               {chatMessages.map((msg, index) => (
