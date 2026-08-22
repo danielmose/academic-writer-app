@@ -1,482 +1,122 @@
-﻿import React, { useState } from 'react';
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  SignUpButton,
-  UserButton,
-  useUser,
-} from '@clerk/clerk-react';
-
-const GOOGLE_SHEETS_API_URL = "https://script.google.com/macros/s/AKfycbzigJhUDyKaEnzGeMOlf0cdjB_598zD_4qJBuLuh4piloC-raBnSn8jYAzWUL7VzLl2/exec";
-
-// Helper function to safely render star ratings without encoding corruption
-const renderStars = (rating) => {
-  const filledStar = "\u2605"; // ★
-  const emptyStar = "\u2606";  // ☆
-  return filledStar.repeat(rating) + emptyStar.repeat(5 - rating);
-};
+import React, { useState } from 'react';
+import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from '@clerk/clerk-react';
 
 export default function App() {
   const { user, isLoaded } = useUser();
-
-  const userEmail = user?.primaryEmailAddress?.emailAddress;
+  const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase() || '';
   const isAdmin = userEmail === 'writerdan791@gmail.com';
 
-  const [formData, setFormData] = useState({
-    serviceType: 'Essay Writing',
-    customService: '',
-    subject: 'General Writing',
-    pages: 2,
-    deadlineDays: 3,
-    instructions: '',
-  });
-
-  const [attachedFile, setAttachedFile] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Live Chat state
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
-    { sender: 'admin', text: 'Hello! How can I assist you with your academic work today?' }
-  ]);
-  const [newMessage, setNewMessage] = useState('');
-
-  // Ratings State (10 sample reviews)
-  const [reviews, setReviews] = useState([
-    { id: 1, name: 'Sarah M.', rating: 5, comment: 'Writer Dan delivered my MATH 210 paper 2 days early. Flawless work!' },
-    { id: 2, name: 'David K.', rating: 5, comment: 'Extremely professional service. Saved my grade on my nursing research paper.' },
-    { id: 3, name: 'Anita P.', rating: 4, comment: 'Great communication and followed all rubric instructions carefully.' },
-    { id: 4, name: 'Jason T.', rating: 5, comment: 'Best academic support available online. Highly recommended!' },
-    { id: 5, name: 'Emily R.', rating: 5, comment: 'Got an A on my Python data analysis project. Exceptional code & explanations.' },
-    { id: 6, name: 'Marcus B.', rating: 5, comment: 'Super fast turnaround on my proctored exam prep materials. Very reliable!' },
-    { id: 7, name: 'Chloe W.', rating: 4, comment: 'Well-researched APA citations and clean formatting throughout the thesis chapter.' },
-    { id: 8, name: 'Kevin L.', rating: 5, comment: 'Managed my entire semester course smoothly. Kept my GPA top tier!' },
-    { id: 9, name: 'Jessica H.', rating: 5, comment: 'Very responsive on chat when I needed emergency updates late at night.' },
-    { id: 10, name: 'Brandon S.', rating: 4, comment: 'High quality work overall! Will definitely come back for future modules.' }
+  const [orders] = useState([
+    {
+      id: 1,
+      clientEmail: 'student1@university.edu',
+      clientName: 'Alex Johnson',
+      service: 'MATH 210 Vectors',
+      subject: 'STEM / Linear Algebra',
+      pages: 5,
+      deadline: '2 Days',
+      price: '$100',
+      timestamp: '2026-08-22 08:30'
+    }
   ]);
 
-  const [newRating, setNewRating] = useState(5);
-  const [newReviewText, setNewReviewText] = useState('');
+  const [formData, setFormData] = useState({ service: 'Essay Writing', subject: 'General Writing', pages: 2, deadlineDays: 3 });
 
-  const handleFormChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setAttachedFile({
-        name: file.name,
-        type: file.type,
-        base64: reader.result,
-      });
-    };
-    reader.readAsDataURL(file);
+  const calculatePrice = () => {
+    let rate = 15;
+    if (formData.subject.includes('MATH') || formData.subject.includes('STEM')) rate = 20;
+    let urgency = formData.deadlineDays <= 1 ? 1.5 : 1;
+    return Math.round(formData.pages * rate * urgency);
   };
 
-  const handleSubmitOrder = async (e) => {
-    e.preventDefault();
-    if (!user) {
-      alert('Please sign in to submit a request.');
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    const finalService = formData.serviceType === 'Custom Task' ? formData.customService : formData.serviceType;
-
-    const payload = {
-      clientEmail: userEmail,
-      clientName: user.fullName || user.firstName || 'Student Client',
-      service: finalService,
-      subject: formData.subject,
-      pages: formData.pages,
-      deadline: `${formData.deadlineDays} Days`,
-      instructions: formData.instructions || 'N/A',
-      fileName: attachedFile ? attachedFile.name : 'No Attachment',
-      fileData: attachedFile ? attachedFile.base64 : '',
-    };
-
-    try {
-      await fetch(GOOGLE_SHEETS_API_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      alert('Order and details submitted successfully!');
-      setAttachedFile(null);
-    } catch (err) {
-      console.error(err);
-      alert('Error submitting request.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
-
-    setChatMessages([...chatMessages, { sender: 'user', text: newMessage }]);
-    setNewMessage('');
-
-    setTimeout(() => {
-      setChatMessages((prev) => [
-        ...prev,
-        { sender: 'admin', text: 'Thanks for reaching out! Writer Dan has received your message.' }
-      ]);
-    }, 1000);
-  };
-
-  const handleAddReview = (e) => {
-    e.preventDefault();
-    if (!newReviewText.trim()) return;
-
-    const reviewObj = {
-      id: Date.now(),
-      name: user?.firstName || userEmail?.split('@')[0] || 'Student',
-      rating: Number(newRating),
-      comment: newReviewText,
-    };
-
-    setReviews([reviewObj, ...reviews]);
-    setNewReviewText('');
-    alert('Thank you! Your rating has been posted.');
-  };
-
-  const handleDeleteReview = (id) => {
-    if (window.confirm('Admin: Are you sure you want to delete this rating?')) {
-      setReviews(reviews.filter((r) => r.id !== id));
-    }
-  };
-
-  if (!isLoaded) return <div style={styles.loading}>Loading application...</div>;
+  if (!isLoaded) return <div style={{ color: '#fff', padding: '2rem', textAlign: 'center' }}>Loading...</div>;
 
   return (
-    <div style={styles.container}>
-      {/* Navigation Header */}
-      <header style={styles.nav}>
-        <div style={styles.logoGroup}>
-          <div style={styles.logoBadge}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-            </svg>
-          </div>
-          <span style={styles.logoText}>Academic Writer</span>
-        </div>
-
+    <div style={{ background: '#0b132b', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif', padding: '1rem' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1c2541', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
+        <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Academic Writer Hub</h2>
         <div>
-          <SignedOut>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <SignInButton mode="modal">
-                <button style={styles.signInBtn}>Sign In</button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button style={styles.signUpBtn}>Sign Up</button>
-              </SignUpButton>
-            </div>
-          </SignedOut>
           <SignedIn>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <span style={styles.userBadge}>
-                {isAdmin ? 'Admin' : 'Student'}: <strong>{userEmail}</strong>
-              </span>
-              <UserButton afterSignOutUrl="/" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ fontSize: '0.8rem', color: '#4cc9f0' }}>{isAdmin ? '?? Admin (Writer): ' : '?? Student: '}{userEmail}</span>
+              <UserButton />
             </div>
           </SignedIn>
+          <SignedOut>
+            <SignInButton mode="modal"><button style={{ padding: '0.5rem 1rem', background: '#4cc9f0', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>Sign In</button></SignInButton>
+          </SignedOut>
         </div>
       </header>
 
-      {/* Admin Panel */}
-      {isAdmin && (
-        <div style={styles.adminBanner}>
-          <div>
-            <strong>Administrator Access Active</strong>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>Logged in as {userEmail}</p>
+      {/* ADMIN / WRITER VIEW (INBOX ONLY) */}
+      {isAdmin ? (
+        <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+          <div style={{ background: '#1c2541', border: '1px solid #4361ee', padding: '1.25rem', borderRadius: '8px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h3 style={{ margin: '0 0 0.25rem 0', color: '#4cc9f0' }}>?? Writer Dashboard Active</h3>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: '#a0aec0' }}>Student submissions and order inquiries inbox</p>
+            </div>
+            <a href="https://sheets.google.com" target="_blank" rel="noreferrer" style={{ background: '#10b981', color: '#fff', padding: '0.5rem 0.8rem', borderRadius: '4px', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 'bold' }}>
+              Open Sheets Database ?
+            </a>
           </div>
-          <a href="https://sheets.google.com" target="_blank" rel="noreferrer" style={styles.sheetBtn}>
-            Open Sheets Database ↗
+
+          <div style={{ background: '#1c2541', padding: '1.25rem', borderRadius: '8px' }}>
+            <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>?? Student Messages & Submissions</h4>
+            {orders.length === 0 ? (
+              <p style={{ color: '#a0aec0', fontSize: '0.9rem' }}>No student messages or orders yet.</p>
+            ) : (
+              orders.map((ord) => (
+                <div key={ord.id} style={{ background: '#0b132b', padding: '1rem', borderRadius: '6px', border: '1px solid #2d3748', marginBottom: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#4cc9f0', marginBottom: '0.5rem' }}>
+                    <strong>{ord.clientName} ({ord.clientEmail})</strong>
+                    <span>{ord.timestamp}</span>
+                  </div>
+                  <div style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                    <strong>{ord.service}</strong> � {ord.subject} ({ord.pages} pages, {ord.deadline})
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: '#10b981', fontWeight: 'bold' }}>{ord.price}</span>
+                    <a href={`mailto:${ord.clientEmail}`} style={{ background: '#4361ee', color: '#fff', padding: '0.4rem 0.8rem', borderRadius: '4px', textDecoration: 'none', fontSize: '0.8rem' }}>
+                      Reply to Student
+                    </a>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      ) : (
+        /* STUDENT CLIENT VIEW */
+        <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+          <h2>Premium Academic Support</h2>
+          <p style={{ color: '#a0aec0', fontSize: '0.9rem' }}>Fast, confidential, and professional assistance for your assignments & exams.</p>
+          <div style={{ background: '#1c2541', padding: '1.5rem', borderRadius: '8px', textAlign: 'left', marginTop: '1.5rem' }}>
+            <h3>Place Your Order</h3>
+            <SignedIn>
+              <form onSubmit={(e) => { e.preventDefault(); alert('Order submitted!'); }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.85rem' }}>Service</label>
+                  <select value={formData.service} onChange={(e) => setFormData({...formData, service: e.target.value})} style={{ width: '100%', padding: '0.6rem', background: '#0b132b', color: '#fff', border: '1px solid #4a5568', borderRadius: '4px' }}>
+                    <option value="Essay Writing">Essay / Research Paper</option>
+                    <option value="STEM / Homework">STEM / Homework</option>
+                  </select>
+                </div>
+                <div style={{ background: '#064e3b', color: '#a7f3d0', padding: '0.75rem', borderRadius: '4px', textAlign: 'center', fontWeight: 'bold' }}>
+                  Estimated Price: ${calculatePrice()}
+                </div>
+                <button type="submit" style={{ padding: '0.75rem', background: '#4361ee', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>Submit Request</button>
+              </form>
+            </SignedIn>
+            <SignedOut>
+              <p style={{ color: '#a0aec0' }}>Please sign in to place an order.</p>
+            </SignedOut>
+          </div>
+          <a href="mailto:writerdan791@gmail.com" style={{ position: 'fixed', bottom: '1rem', right: '1rem', background: '#4361ee', color: '#fff', padding: '0.75rem 1.25rem', borderRadius: '50px', textDecoration: 'none', fontWeight: 'bold' }}>
+            Chat with Writer
           </a>
         </div>
       )}
-
-      {/* Main Order Area */}
-      <main style={styles.main}>
-        <div style={styles.hero}>
-          <h1 style={styles.heroTitle}>Premium Academic Support</h1>
-          <p style={styles.heroSubtitle}>Fast, confidential, and professional assistance for your assignments & exams.</p>
-        </div>
-
-        <div style={styles.card}>
-          <h2 style={styles.cardHeader}>Place Your Order</h2>
-
-          <SignedIn>
-            <form onSubmit={handleSubmitOrder} style={styles.form}>
-              <div style={styles.field}>
-                <label style={styles.label}>Select or Specify Service</label>
-                <select name="serviceType" value={formData.serviceType} onChange={handleFormChange} style={styles.input}>
-                  <option value="Essay Writing">Essay / Research Paper</option>
-                  <option value="MATH 210 / STEM Homework">MATH 210 / STEM Homework</option>
-                  <option value="Proctored Exam Assistance">Proctored Exam Assistance</option>
-                  <option value="Full Course Management">Full Course Management</option>
-                  <option value="Custom Task">Other / Custom Service Request...</option>
-                </select>
-              </div>
-
-              {formData.serviceType === 'Custom Task' && (
-                <div style={styles.field}>
-                  <label style={styles.label}>Describe Custom Service Needed</label>
-                  <input
-                    type="text"
-                    name="customService"
-                    placeholder="e.g., Python Scripting, Lab Report, Presentation..."
-                    value={formData.customService}
-                    onChange={handleFormChange}
-                    required
-                    style={styles.input}
-                  />
-                </div>
-              )}
-
-              <div style={styles.field}>
-                <label style={styles.label}>Subject Area</label>
-                <select name="subject" value={formData.subject} onChange={handleFormChange} style={styles.input}>
-                  <option value="General Writing">General Writing / Humanities</option>
-                  <option value="MATH 210 Vectors">MATH 210 (Linear Algebra / Vectors)</option>
-                  <option value="Nursing / Anatomy">Nursing / Anatomy & Physiology</option>
-                  <option value="Computer Science / STEM">Computer Science / STEM</option>
-                </select>
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>Detailed Instructions / Prompt</label>
-                <textarea
-                  name="instructions"
-                  rows="3"
-                  placeholder="Paste rubric details or specific requests here..."
-                  value={formData.instructions}
-                  onChange={handleFormChange}
-                  style={styles.textarea}
-                />
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>Upload Task Files (PDF, Word, Images)</label>
-                <input type="file" onChange={handleFileChange} style={styles.fileInput} />
-                {attachedFile && (
-                  <span style={{ fontSize: '0.8rem', color: '#10b981', marginTop: '0.25rem' }}>
-                    [Attached]: {attachedFile.name}
-                  </span>
-                )}
-              </div>
-
-              <div style={styles.row}>
-                <div style={styles.field}>
-                  <div style={styles.sliderHeader}>
-                    <label style={styles.label}>Pages / Size</label>
-                    <span style={styles.sliderVal}>{formData.pages} pages</span>
-                  </div>
-                  <input type="range" name="pages" min="1" max="30" value={formData.pages} onChange={handleFormChange} style={styles.slider} />
-                </div>
-
-                <div style={styles.field}>
-                  <div style={styles.sliderHeader}>
-                    <label style={styles.label}>Deadline</label>
-                    <span style={styles.sliderVal}>{formData.deadlineDays} Days</span>
-                  </div>
-                  <input type="range" name="deadlineDays" min="1" max="14" value={formData.deadlineDays} onChange={handleFormChange} style={styles.slider} />
-                </div>
-              </div>
-
-              <button type="submit" disabled={isSubmitting} style={styles.submitBtn}>
-                {isSubmitting ? 'Processing Order...' : 'Submit Request Now'}
-              </button>
-            </form>
-          </SignedIn>
-
-          <SignedOut>
-            <div style={styles.signedOutBox}>
-              <p style={{ margin: '0 0 0.4rem 0', fontWeight: 'bold' }}>Welcome to Academic Writer</p>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#94a3b8' }}>Please <strong>Sign In</strong> or <strong>Sign Up</strong> above to place an order and track your submissions.</p>
-            </div>
-          </SignedOut>
-        </div>
-
-        {/* Clickable Contact Links Section */}
-        <div style={{ ...styles.card, marginTop: '2rem' }}>
-          <h2 style={styles.cardHeader}>Contact Information</h2>
-          <div style={styles.contactGrid}>
-            <a href="mailto:writerdan791@gmail.com" style={styles.contactLink}>
-              <span style={styles.contactIcon}>✉</span>
-              <div>
-                <strong style={styles.contactTitle}>Email</strong>
-                <span style={styles.contactDetail}>writerdan791@gmail.com</span>
-              </div>
-            </a>
-            <a href="https://snapchat.com/add/dan_willis2" target="_blank" rel="noreferrer" style={styles.contactLink}>
-              <span style={styles.contactIcon}>👻</span>
-              <div>
-                <strong style={styles.contactTitle}>Snapchat</strong>
-                <span style={styles.contactDetail}>dan_willis2</span>
-              </div>
-            </a>
-          </div>
-        </div>
-
-        {/* Ratings Section */}
-        <div style={{ ...styles.card, marginTop: '2rem' }}>
-          <h2 style={styles.cardHeader}>Ratings</h2>
-
-          <SignedIn>
-            <form onSubmit={handleAddReview} style={{ ...styles.form, marginBottom: '2rem' }}>
-              <div style={styles.field}>
-                <label style={styles.label}>Leave a Rating</label>
-                <select value={newRating} onChange={(e) => setNewRating(e.target.value)} style={styles.input}>
-                  <option value="5">5 Stars (Excellent)</option>
-                  <option value="4">4 Stars (Good)</option>
-                  <option value="3">3 Stars (Average)</option>
-                  <option value="2">2 Stars (Below Average)</option>
-                  <option value="1">1 Star (Poor)</option>
-                </select>
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>Your Review / Feedback</label>
-                <textarea
-                  rows="2"
-                  placeholder="Share your experience working with Writer Dan..."
-                  value={newReviewText}
-                  onChange={(e) => setNewReviewText(e.target.value)}
-                  required
-                  style={styles.textarea}
-                />
-              </div>
-
-              <button type="submit" style={{ ...styles.submitBtn, background: '#10b981' }}>
-                Post Rating
-              </button>
-            </form>
-          </SignedIn>
-
-          {/* List of 10 Reviews */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {reviews.map((rev) => (
-              <div key={rev.id} style={styles.reviewCard}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: '700', color: '#38bdf8' }}>{rev.name}</span>
-                  <span style={{ color: '#f59e0b', fontSize: '1rem', letterSpacing: '2px' }}>
-                    {renderStars(rev.rating)}
-                  </span>
-                </div>
-                <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', color: '#cbd5e1' }}>{rev.comment}</p>
-
-                {isAdmin && (
-                  <button
-                    onClick={() => handleDeleteReview(rev.id)}
-                    style={styles.deleteReviewBtn}
-                  >
-                    Delete Review (Admin)
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </main>
-
-      {/* Floating Chat Widget with Writer */}
-      <div style={styles.chatWrapper}>
-        {isChatOpen ? (
-          <div style={styles.chatBox}>
-            <div style={styles.chatHeader}>
-              <span>Chat with Writer</span>
-              <button onClick={() => setIsChatOpen(false)} style={styles.closeChatBtn}>✕</button>
-            </div>
-            <div style={styles.chatBody}>
-              {chatMessages.map((msg, index) => (
-                <div
-                  key={index}
-                  style={{
-                    ...styles.chatBubble,
-                    alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                    background: msg.sender === 'user' ? '#2563eb' : '#334155',
-                  }}
-                >
-                  {msg.text}
-                </div>
-              ))}
-            </div>
-            <form onSubmit={handleSendMessage} style={styles.chatFooter}>
-              <input
-                type="text"
-                placeholder="Type a message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                style={styles.chatInput}
-              />
-              <button type="submit" style={styles.sendBtn}>Send</button>
-            </form>
-          </div>
-        ) : (
-          <button onClick={() => setIsChatOpen(true)} style={styles.chatToggleBtn}>
-            Chat with Writer
-          </button>
-        )}
-      </div>
     </div>
   );
 }
-
-const styles = {
-  container: { fontFamily: "'Inter', system-ui, -apple-system, sans-serif", minHeight: '100vh', background: '#0f172a', color: '#f8fafc', paddingBottom: '4rem' },
-  nav: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 2rem', borderBottom: '1px solid #1e293b', background: '#0f172a' },
-  logoGroup: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
-  logoBadge: { background: 'linear-gradient(135deg, #2563eb, #7c3aed)', color: '#fff', padding: '0.5rem', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  logoText: { fontWeight: '700', fontSize: '1.25rem', letterSpacing: '-0.02em', color: '#ffffff' },
-  signInBtn: { background: 'transparent', color: '#cbd5e1', border: '1px solid #334155', padding: '0.55rem 1.1rem', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' },
-  signUpBtn: { background: '#2563eb', color: '#fff', border: 'none', padding: '0.55rem 1.1rem', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' },
-  userBadge: { fontSize: '0.85rem', color: '#94a3b8', background: '#1e293b', padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1px solid #334155' },
-  loading: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#0f172a', color: '#94a3b8' },
-  adminBanner: { maxWidth: '720px', margin: '1.5rem auto 0', padding: '1rem 1.5rem', background: '#1e1b4b', border: '1px solid #4338ca', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  sheetBtn: { background: '#10b981', color: '#fff', padding: '0.5rem 1rem', borderRadius: '6px', textDecoration: 'none', fontWeight: '600', fontSize: '0.85rem' },
-  main: { maxWidth: '720px', margin: '0 auto', padding: '3rem 1.5rem' },
-  hero: { textAlign: 'center', marginBottom: '2.5rem' },
-  heroTitle: { fontSize: '2.25rem', fontWeight: '800', letterSpacing: '-0.03em', marginBottom: '0.5rem' },
-  heroSubtitle: { color: '#94a3b8', fontSize: '1rem', margin: 0 },
-  card: { background: '#1e293b', border: '1px solid #334155', borderRadius: '16px', padding: '2rem', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)' },
-  cardHeader: { margin: '0 0 1.5rem', fontSize: '1.25rem', fontWeight: '700', borderBottom: '1px solid #334155', paddingBottom: '0.75rem' },
-  form: { display: 'flex', flexDirection: 'column', gap: '1.25rem' },
-  row: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' },
-  field: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-  label: { fontSize: '0.85rem', fontWeight: '600', color: '#cbd5e1' },
-  sliderHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  sliderVal: { fontSize: '0.85rem', color: '#38bdf8', fontWeight: '600' },
-  input: { background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', padding: '0.75rem', color: '#f8fafc', fontSize: '0.95rem', outline: 'none' },
-  textarea: { background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', padding: '0.75rem', color: '#f8fafc', fontSize: '0.95rem', outline: 'none', resize: 'vertical' },
-  fileInput: { color: '#94a3b8', fontSize: '0.85rem' },
-  slider: { accentColor: '#3b82f6', cursor: 'pointer' },
-  submitBtn: { background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', border: 'none', padding: '0.9rem', borderRadius: '8px', fontWeight: '700', fontSize: '1rem', cursor: 'pointer', marginTop: '0.5rem' },
-  signedOutBox: { textAlign: 'center', padding: '2rem', background: '#0f172a', borderRadius: '10px', color: '#cbd5e1', border: '1px dashed #334155' },
-  contactGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' },
-  contactLink: { display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#0f172a', padding: '1rem', borderRadius: '8px', border: '1px solid #334155', textDecoration: 'none', transition: 'border-color 0.2s' },
-  contactIcon: { fontSize: '1.5rem' },
-  contactTitle: { display: 'block', fontSize: '0.9rem', color: '#38bdf8' },
-  contactDetail: { margin: 0, fontSize: '0.85rem', color: '#cbd5e1' },
-  reviewCard: { background: '#0f172a', border: '1px solid #334155', borderRadius: '10px', padding: '1rem', position: 'relative' },
-  deleteReviewBtn: { marginTop: '0.75rem', background: '#ef4444', color: '#fff', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' },
-  chatWrapper: { position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 1000 },
-  chatToggleBtn: { background: '#2563eb', color: '#fff', border: 'none', padding: '0.8rem 1.25rem', borderRadius: '30px', fontWeight: '600', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)', cursor: 'pointer' },
-  chatBox: { width: '320px', height: '400px', background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4)', overflow: 'hidden' },
-  chatHeader: { background: '#0f172a', padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '600', fontSize: '0.9rem', borderBottom: '1px solid #334155' },
-  closeChatBtn: { background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1rem' },
-  chatBody: { flex: 1, padding: '1rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-  chatBubble: { maxWidth: '80%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.85rem', color: '#fff' },
-  chatFooter: { padding: '0.5rem', background: '#0f172a', display: 'flex', gap: '0.5rem', borderTop: '1px solid #334155' },
-  chatInput: { flex: 1, background: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '0.4rem 0.6rem', color: '#fff', fontSize: '0.85rem', outline: 'none' },
-  sendBtn: { background: '#2563eb', color: '#fff', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer' }
-};
