@@ -35,13 +35,6 @@ export default function App() {
   ]);
   const [newMessage, setNewMessage] = useState('');
 
-  const calculatePrice = () => {
-    let rate = 15;
-    if (formData.subject.includes('MATH') || formData.subject.includes('STEM')) rate = 20;
-    let urgency = formData.deadlineDays <= 1 ? 1.5 : 1;
-    return Math.round(formData.pages * rate * urgency);
-  };
-
   const handleFormChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleFileChange = (e) => {
@@ -77,7 +70,6 @@ export default function App() {
       subject: formData.subject,
       pages: formData.pages,
       deadline: `${formData.deadlineDays} Days`,
-      price: `$${calculatePrice()}`,
       instructions: formData.instructions || 'N/A',
       fileName: attachedFile ? attachedFile.name : 'No Attachment',
       fileData: attachedFile ? attachedFile.base64 : '',
@@ -91,7 +83,7 @@ export default function App() {
         body: JSON.stringify(payload),
       });
 
-      alert('Order and attachment submitted successfully!');
+      alert('Order and details submitted successfully!');
       setAttachedFile(null);
     } catch (err) {
       console.error(err);
@@ -146,7 +138,7 @@ export default function App() {
           <SignedIn>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <span style={styles.userBadge}>
-                {isAdmin ? '?? Admin' : '?? Student'}: <strong>{userEmail}</strong>
+                {isAdmin ? 'Admin' : 'Student'}: <strong>{userEmail}</strong>
               </span>
               <UserButton afterSignOutUrl="/" />
             </div>
@@ -232,7 +224,7 @@ export default function App() {
                 <input type="file" onChange={handleFileChange} style={styles.fileInput} />
                 {attachedFile && (
                   <span style={{ fontSize: '0.8rem', color: '#10b981', marginTop: '0.25rem' }}>
-                    ? Attached: {attachedFile.name}
+                    [Attached]: {attachedFile.name}
                   </span>
                 )}
               </div>
@@ -255,11 +247,6 @@ export default function App() {
                 </div>
               </div>
 
-              <div style={styles.priceCard}>
-                <span style={{ fontSize: '0.9rem', color: '#94a3b8' }}>Total Estimate</span>
-                <span style={styles.priceAmount}>${calculatePrice()}</span>
-              </div>
-
               <button type="submit" disabled={isSubmitting} style={styles.submitBtn}>
                 {isSubmitting ? 'Processing Order...' : 'Submit Request Now'}
               </button>
@@ -280,7 +267,7 @@ export default function App() {
         {isChatOpen ? (
           <div style={styles.chatBox}>
             <div style={styles.chatHeader}>
-              <span>?? Chat with Admin (Writer Dan)</span>
+              <span>Chat with Admin (Writer Dan)</span>
               <button onClick={() => setIsChatOpen(false)} style={styles.closeChatBtn}>?</button>
             </div>
             <div style={styles.chatBody}>
@@ -310,7 +297,7 @@ export default function App() {
           </div>
         ) : (
           <button onClick={() => setIsChatOpen(true)} style={styles.chatToggleBtn}>
-            ?? Chat with Admin
+            Chat with Admin
           </button>
         )}
       </div>
@@ -346,8 +333,6 @@ const styles = {
   textarea: { background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', padding: '0.75rem', color: '#f8fafc', fontSize: '0.95rem', outline: 'none', resize: 'vertical' },
   fileInput: { color: '#94a3b8', fontSize: '0.85rem' },
   slider: { accentColor: '#3b82f6', cursor: 'pointer' },
-  priceCard: { background: '#0f172a', border: '1px solid #334155', borderRadius: '10px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' },
-  priceAmount: { fontSize: '1.5rem', fontWeight: '800', color: '#10b981' },
   submitBtn: { background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', border: 'none', padding: '0.9rem', borderRadius: '8px', fontWeight: '700', fontSize: '1rem', cursor: 'pointer', marginTop: '0.5rem' },
   signedOutBox: { textAlign: 'center', padding: '2rem', background: '#0f172a', borderRadius: '10px', color: '#cbd5e1', border: '1px dashed #334155' },
   chatWrapper: { position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 1000 },
