@@ -35,12 +35,18 @@ export default function App() {
   ]);
   const [newMessage, setNewMessage] = useState('');
 
-  // Ratings State (Pre-populated with fake reviews)
+  // Ratings State (Pre-populated with 10 sample reviews)
   const [reviews, setReviews] = useState([
     { id: 1, name: 'Sarah M.', rating: 5, comment: 'Writer Dan delivered my MATH 210 paper 2 days early. Flawless work!' },
     { id: 2, name: 'David K.', rating: 5, comment: 'Extremely professional service. Saved my grade on my nursing research paper.' },
     { id: 3, name: 'Anita P.', rating: 4, comment: 'Great communication and followed all rubric instructions carefully.' },
     { id: 4, name: 'Jason T.', rating: 5, comment: 'Best academic support available online. Highly recommended!' },
+    { id: 5, name: 'Emily R.', rating: 5, comment: 'Got an A on my Python data analysis project. Exceptional code & explanations.' },
+    { id: 6, name: 'Marcus B.', rating: 5, comment: 'Super fast turnaround on my proctored exam prep materials. Very reliable!' },
+    { id: 7, name: 'Chloe W.', rating: 4, comment: 'Well-researched APA citations and clean formatting throughout the thesis chapter.' },
+    { id: 8, name: 'Kevin L.', rating: 5, comment: 'Managed my entire semester course smoothly. Kept my GPA top tier!' },
+    { id: 9, name: 'Jessica H.', rating: 5, comment: 'Very responsive on chat when I needed emergency updates late at night.' },
+    { id: 10, name: 'Brandon S.', rating: 4, comment: 'High quality work overall! Will definitely come back for future modules.' }
   ]);
 
   const [newRating, setNewRating] = useState(5);
@@ -296,7 +302,7 @@ export default function App() {
 
         {/* Ratings and Reviews Section */}
         <div style={{ ...styles.card, marginTop: '2rem' }}>
-          <h2 style={styles.cardHeader}>Student Ratings & Feedback</h2>
+          <h2 style={styles.cardHeader}>Student Ratings & Feedback ({reviews.length})</h2>
 
           <SignedIn>
             <form onSubmit={handleAddReview} style={{ ...styles.form, marginBottom: '2rem' }}>
@@ -329,7 +335,7 @@ export default function App() {
             </form>
           </SignedIn>
 
-          {/* List of Reviews */}
+          {/* List of 10 Reviews */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {reviews.map((rev) => (
               <div key={rev.id} style={styles.reviewCard}>
