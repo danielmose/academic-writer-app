@@ -38,31 +38,32 @@ export default function App() {
         <div>
           <SignedIn>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <span style={{ fontSize: '0.8rem', color: '#4cc9f0' }}>{isAdmin ? '?? Admin (Writer): ' : '?? Student: '}{userEmail}</span>
+              <span style={{ fontSize: '0.8rem', color: '#4cc9f0' }}>{isAdmin ? 'Admin (Writer): ' : 'Student: '}{userEmail}</span>
               <UserButton />
             </div>
           </SignedIn>
           <SignedOut>
-            <SignInButton mode="modal"><button style={{ padding: '0.5rem 1rem', background: '#4cc9f0', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>Sign In</button></SignInButton>
+            <SignInButton mode="modal">
+              <button style={{ padding: '0.5rem 1rem', background: '#4cc9f0', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>Sign In</button>
+            </SignInButton>
           </SignedOut>
         </div>
       </header>
 
-      {/* ADMIN / WRITER VIEW (INBOX ONLY) */}
       {isAdmin ? (
         <div style={{ maxWidth: '700px', margin: '0 auto' }}>
           <div style={{ background: '#1c2541', border: '1px solid #4361ee', padding: '1.25rem', borderRadius: '8px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h3 style={{ margin: '0 0 0.25rem 0', color: '#4cc9f0' }}>?? Writer Dashboard Active</h3>
+              <h3 style={{ margin: '0 0 0.25rem 0', color: '#4cc9f0' }}>Writer Dashboard Active</h3>
               <p style={{ margin: 0, fontSize: '0.85rem', color: '#a0aec0' }}>Student submissions and order inquiries inbox</p>
             </div>
             <a href="https://sheets.google.com" target="_blank" rel="noreferrer" style={{ background: '#10b981', color: '#fff', padding: '0.5rem 0.8rem', borderRadius: '4px', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 'bold' }}>
-              Open Sheets Database ?
+              Open Sheets Database
             </a>
           </div>
 
           <div style={{ background: '#1c2541', padding: '1.25rem', borderRadius: '8px' }}>
-            <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>?? Student Messages & Submissions</h4>
+            <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>Student Messages & Submissions</h4>
             {orders.length === 0 ? (
               <p style={{ color: '#a0aec0', fontSize: '0.9rem' }}>No student messages or orders yet.</p>
             ) : (
@@ -73,7 +74,7 @@ export default function App() {
                     <span>{ord.timestamp}</span>
                   </div>
                   <div style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                    <strong>{ord.service}</strong> — {ord.subject} ({ord.pages} pages, {ord.deadline})
+                    <strong>{ord.service}</strong> - {ord.subject} ({ord.pages} pages, {ord.deadline})
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: '#10b981', fontWeight: 'bold' }}>{ord.price}</span>
@@ -87,7 +88,6 @@ export default function App() {
           </div>
         </div>
       ) : (
-        /* STUDENT CLIENT VIEW */
         <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
           <h2>Premium Academic Support</h2>
           <p style={{ color: '#a0aec0', fontSize: '0.9rem' }}>Fast, confidential, and professional assistance for your assignments & exams.</p>
