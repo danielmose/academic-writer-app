@@ -20,6 +20,15 @@ export default function App() {
     }
   ]);
 
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [messages, setMessages] = useState({
+    'student1@university.edu': [
+      { sender: 'student', text: 'Hi, I submitted my assignment requirements for MATH 210 vectors.', time: '08:30 AM' },
+      { sender: 'writer', text: 'Hello! I received it. Reviewing the details now.', time: '08:32 AM' }
+    ]
+  });
+  const [replyText, setReplyText] = useState('');
+
   const [formData, setFormData] = useState({ service: 'Essay Writing', subject: 'General Writing', pages: 2, deadlineDays: 3 });
 
   const calculatePrice = () => {
@@ -27,6 +36,16 @@ export default function App() {
     if (formData.subject.includes('MATH') || formData.subject.includes('STEM')) rate = 20;
     let urgency = formData.deadlineDays <= 1 ? 1.5 : 1;
     return Math.round(formData.pages * rate * urgency);
+  };
+
+  const handleSendMessage = (email) => {
+    if (!replyText.trim()) return;
+    const currentMsgs = messages[email] || [];
+    setMessages({
+      ...messages,
+      [email]: [...currentMsgs, { sender: 'writer', text: replyText, time: 'Just now' }]
+    });
+    setReplyText('');
   };
 
   if (!isLoaded) return <div style={{ color: '#fff', padding: '2rem', textAlign: 'center' }}>Loading...</div>;
@@ -51,7 +70,7 @@ export default function App() {
       </header>
 
       {isAdmin ? (
-        <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+        <div style={{ maxWidth: '850px', margin: '0 auto' }}>
           <div style={{ background: '#1c2541', border: '1px solid #4361ee', padding: '1.25rem', borderRadius: '8px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h3 style={{ margin: '0 0 0.25rem 0', color: '#4cc9f0' }}>Writer Dashboard Active</h3>
@@ -62,28 +81,52 @@ export default function App() {
             </a>
           </div>
 
-          <div style={{ background: '#1c2541', padding: '1.25rem', borderRadius: '8px' }}>
-            <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>Student Messages & Submissions</h4>
-            {orders.length === 0 ? (
-              <p style={{ color: '#a0aec0', fontSize: '0.9rem' }}>No student messages or orders yet.</p>
-            ) : (
-              orders.map((ord) => (
+          <div style={{ display: 'grid', gridTemplateColumns: selectedStudent ? '1fr 1fr' : '1fr', gap: '1rem' }}>
+            {/* INBOX LIST */}
+            <div style={{ background: '#1c2541', padding: '1.25rem', borderRadius: '8px' }}>
+              <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>Student Submissions</h4>
+              {orders.map((ord) => (
                 <div key={ord.id} style={{ background: '#0b132b', padding: '1rem', borderRadius: '6px', border: '1px solid #2d3748', marginBottom: '0.75rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#4cc9f0', marginBottom: '0.5rem' }}>
-                    <strong>{ord.clientName} ({ord.clientEmail})</strong>
+                    <strong>{ord.clientName}</strong>
                     <span>{ord.timestamp}</span>
                   </div>
+                  <div style={{ fontSize: '0.85rem', color: '#a0aec0', marginBottom: '0.5rem' }}>{ord.clientEmail}</div>
                   <div style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                    <strong>{ord.service}</strong> - {ord.subject} ({ord.pages} pages, {ord.deadline})
+                    <strong>{ord.service}</strong> - {ord.subject} ({ord.pages} pages)
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: '#10b981', fontWeight: 'bold' }}>{ord.price}</span>
-                    <a href={`mailto:${ord.clientEmail}`} style={{ background: '#4361ee', color: '#fff', padding: '0.4rem 0.8rem', borderRadius: '4px', textDecoration: 'none', fontSize: '0.8rem' }}>
-                      Reply to Student
-                    </a>
+                    <button onClick={() => setSelectedStudent(ord)} style={{ background: '#4361ee', color: '#fff', padding: '0.4rem 0.8rem', border: 'none', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer' }}>
+                      {selectedStudent?.clientEmail === ord.clientEmail ? 'Chat Open' : 'Open Chat'}
+                    </button>
                   </div>
                 </div>
-              ))
+              ))}
+            </div>
+
+            {/* LIVE IN-APP CHAT PANEL */}
+            {selectedStudent && (
+              <div style={{ background: '#1c2541', padding: '1.25rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #2d3748', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+                    <h4 style={{ margin: 0, fontSize: '1rem', color: '#4cc9f0' }}>Chat: {selectedStudent.clientName}</h4>
+                    <button onClick={() => setSelectedStudent(null)} style={{ background: 'transparent', border: 'none', color: '#a0aec0', cursor: 'pointer' }}>?</button>
+                  </div>
+                  <div style={{ maxHeight: '250px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {(messages[selectedStudent.clientEmail] || []).map((msg, index) => (
+                      <div key={index} style={{ alignSelf: msg.sender === 'writer' ? 'flex-end' : 'flex-start', background: msg.sender === 'writer' ? '#4361ee' : '#0b132b', padding: '0.6rem 0.8rem', borderRadius: '6px', maxWidth: '80%', fontSize: '0.85rem' }}>
+                        <div>{msg.text}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#a0aec0', textAlign: 'right', marginTop: '0.2rem' }}>{msg.time}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                  <input type="text" placeholder="Type a response..." value={replyText} onChange={(e) => setReplyText(e.target.value)} style={{ flex: 1, padding: '0.5rem', background: '#0b132b', color: '#fff', border: '1px solid #2d3748', borderRadius: '4px' }} />
+                  <button onClick={() => handleSendMessage(selectedStudent.clientEmail)} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '0.5rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Send</button>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -112,9 +155,6 @@ export default function App() {
               <p style={{ color: '#a0aec0' }}>Please sign in to place an order.</p>
             </SignedOut>
           </div>
-          <a href="mailto:writerdan791@gmail.com" style={{ position: 'fixed', bottom: '1rem', right: '1rem', background: '#4361ee', color: '#fff', padding: '0.75rem 1.25rem', borderRadius: '50px', textDecoration: 'none', fontWeight: 'bold' }}>
-            Chat with Writer
-          </a>
         </div>
       )}
     </div>
