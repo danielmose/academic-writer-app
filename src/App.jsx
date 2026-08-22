@@ -31,9 +31,20 @@ export default function App() {
   // Live Chat state
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([
-    { sender: 'admin', text: 'Hello! How can I help you with your task today?' }
+    { sender: 'admin', text: 'Hello! How can I assist you with your academic work today?' }
   ]);
   const [newMessage, setNewMessage] = useState('');
+
+  // Ratings State (Pre-populated with fake reviews)
+  const [reviews, setReviews] = useState([
+    { id: 1, name: 'Sarah M.', rating: 5, comment: 'Writer Dan delivered my MATH 210 paper 2 days early. Flawless work!' },
+    { id: 2, name: 'David K.', rating: 5, comment: 'Extremely professional service. Saved my grade on my nursing research paper.' },
+    { id: 3, name: 'Anita P.', rating: 4, comment: 'Great communication and followed all rubric instructions carefully.' },
+    { id: 4, name: 'Jason T.', rating: 5, comment: 'Best academic support available online. Highly recommended!' },
+  ]);
+
+  const [newRating, setNewRating] = useState(5);
+  const [newReviewText, setNewReviewText] = useState('');
 
   const handleFormChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -106,6 +117,28 @@ export default function App() {
         { sender: 'admin', text: 'Thanks for reaching out! Writer Dan has received your message.' }
       ]);
     }, 1000);
+  };
+
+  const handleAddReview = (e) => {
+    e.preventDefault();
+    if (!newReviewText.trim()) return;
+
+    const reviewObj = {
+      id: Date.now(),
+      name: user?.firstName || userEmail?.split('@')[0] || 'Student',
+      rating: Number(newRating),
+      comment: newReviewText,
+    };
+
+    setReviews([reviewObj, ...reviews]);
+    setNewReviewText('');
+    alert('Thank you! Your rating has been posted.');
+  };
+
+  const handleDeleteReview = (id) => {
+    if (window.confirm('Admin: Are you sure you want to delete this rating?')) {
+      setReviews(reviews.filter((r) => r.id !== id));
+    }
   };
 
   if (!isLoaded) return <div style={styles.loading}>Loading application...</div>;
@@ -260,14 +293,74 @@ export default function App() {
             </div>
           </SignedOut>
         </div>
+
+        {/* Ratings and Reviews Section */}
+        <div style={{ ...styles.card, marginTop: '2rem' }}>
+          <h2 style={styles.cardHeader}>Student Ratings & Feedback</h2>
+
+          <SignedIn>
+            <form onSubmit={handleAddReview} style={{ ...styles.form, marginBottom: '2rem' }}>
+              <div style={styles.field}>
+                <label style={styles.label}>Leave a Rating</label>
+                <select value={newRating} onChange={(e) => setNewRating(e.target.value)} style={styles.input}>
+                  <option value="5">????? (5 Stars - Excellent)</option>
+                  <option value="4">????? (4 Stars - Good)</option>
+                  <option value="3">????? (3 Stars - Average)</option>
+                  <option value="2">????? (2 Stars - Below Average)</option>
+                  <option value="1">????? (1 Star - Poor)</option>
+                </select>
+              </div>
+
+              <div style={styles.field}>
+                <label style={styles.label}>Your Review / Feedback</label>
+                <textarea
+                  rows="2"
+                  placeholder="Share your experience working with Writer Dan..."
+                  value={newReviewText}
+                  onChange={(e) => setNewReviewText(e.target.value)}
+                  required
+                  style={styles.textarea}
+                />
+              </div>
+
+              <button type="submit" style={{ ...styles.submitBtn, background: '#10b981' }}>
+                Post Rating
+              </button>
+            </form>
+          </SignedIn>
+
+          {/* List of Reviews */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {reviews.map((rev) => (
+              <div key={rev.id} style={styles.reviewCard}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: '700', color: '#38bdf8' }}>{rev.name}</span>
+                  <span style={{ color: '#f59e0b', fontSize: '0.9rem' }}>
+                    {'?'.repeat(rev.rating)}{'?'.repeat(5 - rev.rating)}
+                  </span>
+                </div>
+                <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', color: '#cbd5e1' }}>{rev.comment}</p>
+
+                {isAdmin && (
+                  <button
+                    onClick={() => handleDeleteReview(rev.id)}
+                    style={styles.deleteReviewBtn}
+                  >
+                    Delete Review (Admin)
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       </main>
 
-      {/* Floating Chat Widget with Admin */}
+      {/* Floating Chat Widget with Writer */}
       <div style={styles.chatWrapper}>
         {isChatOpen ? (
           <div style={styles.chatBox}>
             <div style={styles.chatHeader}>
-              <span>Chat with Admin (Writer Dan)</span>
+              <span>Chat with Writer</span>
               <button onClick={() => setIsChatOpen(false)} style={styles.closeChatBtn}>?</button>
             </div>
             <div style={styles.chatBody}>
@@ -297,7 +390,7 @@ export default function App() {
           </div>
         ) : (
           <button onClick={() => setIsChatOpen(true)} style={styles.chatToggleBtn}>
-            Chat with Admin
+            Chat with Writer
           </button>
         )}
       </div>
@@ -335,6 +428,8 @@ const styles = {
   slider: { accentColor: '#3b82f6', cursor: 'pointer' },
   submitBtn: { background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', border: 'none', padding: '0.9rem', borderRadius: '8px', fontWeight: '700', fontSize: '1rem', cursor: 'pointer', marginTop: '0.5rem' },
   signedOutBox: { textAlign: 'center', padding: '2rem', background: '#0f172a', borderRadius: '10px', color: '#cbd5e1', border: '1px dashed #334155' },
+  reviewCard: { background: '#0f172a', border: '1px solid #334155', borderRadius: '10px', padding: '1rem', position: 'relative' },
+  deleteReviewBtn: { marginTop: '0.75rem', background: '#ef4444', color: '#fff', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' },
   chatWrapper: { position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 1000 },
   chatToggleBtn: { background: '#2563eb', color: '#fff', border: 'none', padding: '0.8rem 1.25rem', borderRadius: '30px', fontWeight: '600', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)', cursor: 'pointer' },
   chatBox: { width: '320px', height: '400px', background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4)', overflow: 'hidden' },
