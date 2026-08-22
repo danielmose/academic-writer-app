@@ -307,6 +307,27 @@ export default function App() {
           </SignedOut>
         </div>
 
+        {/* Clickable Contact Links Section */}
+        <div style={{ ...styles.card, marginTop: '2rem' }}>
+          <h2 style={styles.cardHeader}>Contact Information</h2>
+          <div style={styles.contactGrid}>
+            <a href="mailto:writerdan791@gmail.com" style={styles.contactLink}>
+              <span style={styles.contactIcon}>✉</span>
+              <div>
+                <strong style={styles.contactTitle}>Email</strong>
+                <span style={styles.contactDetail}>writerdan791@gmail.com</span>
+              </div>
+            </a>
+            <a href="https://snapchat.com/add/dan_willis2" target="_blank" rel="noreferrer" style={styles.contactLink}>
+              <span style={styles.contactIcon}>👻</span>
+              <div>
+                <strong style={styles.contactTitle}>Snapchat</strong>
+                <span style={styles.contactDetail}>dan_willis2</span>
+              </div>
+            </a>
+          </div>
+        </div>
+
         {/* Ratings Section */}
         <div style={{ ...styles.card, marginTop: '2rem' }}>
           <h2 style={styles.cardHeader}>Ratings</h2>
@@ -441,6 +462,11 @@ const styles = {
   slider: { accentColor: '#3b82f6', cursor: 'pointer' },
   submitBtn: { background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', border: 'none', padding: '0.9rem', borderRadius: '8px', fontWeight: '700', fontSize: '1rem', cursor: 'pointer', marginTop: '0.5rem' },
   signedOutBox: { textAlign: 'center', padding: '2rem', background: '#0f172a', borderRadius: '10px', color: '#cbd5e1', border: '1px dashed #334155' },
+  contactGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' },
+  contactLink: { display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#0f172a', padding: '1rem', borderRadius: '8px', border: '1px solid #334155', textDecoration: 'none', transition: 'border-color 0.2s' },
+  contactIcon: { fontSize: '1.5rem' },
+  contactTitle: { display: 'block', fontSize: '0.9rem', color: '#38bdf8' },
+  contactDetail: { margin: 0, fontSize: '0.85rem', color: '#cbd5e1' },
   reviewCard: { background: '#0f172a', border: '1px solid #334155', borderRadius: '10px', padding: '1rem', position: 'relative' },
   deleteReviewBtn: { marginTop: '0.75rem', background: '#ef4444', color: '#fff', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' },
   chatWrapper: { position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 1000 },
