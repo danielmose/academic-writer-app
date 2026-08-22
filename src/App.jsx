@@ -17,12 +17,23 @@ export default function App() {
   const isAdmin = userEmail === 'writerdan791@gmail.com';
 
   const [formData, setFormData] = useState({
-    service: 'Essay Writing',
+    serviceType: 'Essay Writing',
+    customService: '',
     subject: 'General Writing',
     pages: 2,
     deadlineDays: 3,
+    instructions: '',
   });
+
+  const [attachedFile, setAttachedFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Live Chat state
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([
+    { sender: 'admin', text: 'Hello! How can I help you with your task today?' }
+  ]);
+  const [newMessage, setNewMessage] = useState('');
 
   const calculatePrice = () => {
     let rate = 15;
@@ -33,6 +44,21 @@ export default function App() {
 
   const handleFormChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAttachedFile({
+        name: file.name,
+        type: file.type,
+        base64: reader.result,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmitOrder = async (e) => {
     e.preventDefault();
     if (!user) {
@@ -42,14 +68,19 @@ export default function App() {
 
     setIsSubmitting(true);
 
+    const finalService = formData.serviceType === 'Custom Task' ? formData.customService : formData.serviceType;
+
     const payload = {
       clientEmail: userEmail,
       clientName: user.fullName || user.firstName || 'Student Client',
-      service: formData.service,
+      service: finalService,
       subject: formData.subject,
       pages: formData.pages,
       deadline: `${formData.deadlineDays} Days`,
       price: `$${calculatePrice()}`,
+      instructions: formData.instructions || 'N/A',
+      fileName: attachedFile ? attachedFile.name : 'No Attachment',
+      fileData: attachedFile ? attachedFile.base64 : '',
     };
 
     try {
@@ -60,13 +91,29 @@ export default function App() {
         body: JSON.stringify(payload),
       });
 
-      alert('Order submitted successfully! Logged in Google Sheets.');
+      alert('Order and attachment submitted successfully!');
+      setAttachedFile(null);
     } catch (err) {
       console.error(err);
       alert('Error submitting request.');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    setChatMessages([...chatMessages, { sender: 'user', text: newMessage }]);
+    setNewMessage('');
+
+    setTimeout(() => {
+      setChatMessages((prev) => [
+        ...prev,
+        { sender: 'admin', text: 'Thanks for reaching out! Writer Dan has received your message.' }
+      ]);
+    }, 1000);
   };
 
   if (!isLoaded) return <div style={styles.loading}>Loading application...</div>;
@@ -133,14 +180,30 @@ export default function App() {
           <SignedIn>
             <form onSubmit={handleSubmitOrder} style={styles.form}>
               <div style={styles.field}>
-                <label style={styles.label}>Select Service</label>
-                <select name="service" value={formData.service} onChange={handleFormChange} style={styles.input}>
+                <label style={styles.label}>Select or Specify Service</label>
+                <select name="serviceType" value={formData.serviceType} onChange={handleFormChange} style={styles.input}>
                   <option value="Essay Writing">Essay / Research Paper</option>
                   <option value="MATH 210 / STEM Homework">MATH 210 / STEM Homework</option>
                   <option value="Proctored Exam Assistance">Proctored Exam Assistance</option>
                   <option value="Full Course Management">Full Course Management</option>
+                  <option value="Custom Task">Other / Custom Service Request...</option>
                 </select>
               </div>
+
+              {formData.serviceType === 'Custom Task' && (
+                <div style={styles.field}>
+                  <label style={styles.label}>Describe Custom Service Needed</label>
+                  <input
+                    type="text"
+                    name="customService"
+                    placeholder="e.g., Python Scripting, Lab Report, Presentation..."
+                    value={formData.customService}
+                    onChange={handleFormChange}
+                    required
+                    style={styles.input}
+                  />
+                </div>
+              )}
 
               <div style={styles.field}>
                 <label style={styles.label}>Subject Area</label>
@@ -150,6 +213,28 @@ export default function App() {
                   <option value="Nursing / Anatomy">Nursing / Anatomy & Physiology</option>
                   <option value="Computer Science / STEM">Computer Science / STEM</option>
                 </select>
+              </div>
+
+              <div style={styles.field}>
+                <label style={styles.label}>Detailed Instructions / Prompt</label>
+                <textarea
+                  name="instructions"
+                  rows="3"
+                  placeholder="Paste rubric details or specific requests here..."
+                  value={formData.instructions}
+                  onChange={handleFormChange}
+                  style={styles.textarea}
+                />
+              </div>
+
+              <div style={styles.field}>
+                <label style={styles.label}>Upload Task Files (PDF, Word, Images)</label>
+                <input type="file" onChange={handleFileChange} style={styles.fileInput} />
+                {attachedFile && (
+                  <span style={{ fontSize: '0.8rem', color: '#10b981', marginTop: '0.25rem' }}>
+                    ? Attached: {attachedFile.name}
+                  </span>
+                )}
               </div>
 
               <div style={styles.row}>
@@ -189,12 +274,52 @@ export default function App() {
           </SignedOut>
         </div>
       </main>
+
+      {/* Floating Chat Widget with Admin */}
+      <div style={styles.chatWrapper}>
+        {isChatOpen ? (
+          <div style={styles.chatBox}>
+            <div style={styles.chatHeader}>
+              <span>?? Chat with Admin (Writer Dan)</span>
+              <button onClick={() => setIsChatOpen(false)} style={styles.closeChatBtn}>?</button>
+            </div>
+            <div style={styles.chatBody}>
+              {chatMessages.map((msg, index) => (
+                <div
+                  key={index}
+                  style={{
+                    ...styles.chatBubble,
+                    alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                    background: msg.sender === 'user' ? '#2563eb' : '#334155',
+                  }}
+                >
+                  {msg.text}
+                </div>
+              ))}
+            </div>
+            <form onSubmit={handleSendMessage} style={styles.chatFooter}>
+              <input
+                type="text"
+                placeholder="Type a message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                style={styles.chatInput}
+              />
+              <button type="submit" style={styles.sendBtn}>Send</button>
+            </form>
+          </div>
+        ) : (
+          <button onClick={() => setIsChatOpen(true)} style={styles.chatToggleBtn}>
+            ?? Chat with Admin
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
 const styles = {
-  container: { fontFamily: "'Inter', system-ui, -apple-system, sans-serif", minHeight: '100vh', background: '#0f172a', color: '#f8fafc' },
+  container: { fontFamily: "'Inter', system-ui, -apple-system, sans-serif", minHeight: '100vh', background: '#0f172a', color: '#f8fafc', paddingBottom: '4rem' },
   nav: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 2rem', borderBottom: '1px solid #1e293b', background: '#0f172a' },
   logoGroup: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
   logoBadge: { background: 'linear-gradient(135deg, #2563eb, #7c3aed)', color: '#fff', padding: '0.5rem', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
@@ -218,9 +343,21 @@ const styles = {
   sliderHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   sliderVal: { fontSize: '0.85rem', color: '#38bdf8', fontWeight: '600' },
   input: { background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', padding: '0.75rem', color: '#f8fafc', fontSize: '0.95rem', outline: 'none' },
+  textarea: { background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', padding: '0.75rem', color: '#f8fafc', fontSize: '0.95rem', outline: 'none', resize: 'vertical' },
+  fileInput: { color: '#94a3b8', fontSize: '0.85rem' },
   slider: { accentColor: '#3b82f6', cursor: 'pointer' },
   priceCard: { background: '#0f172a', border: '1px solid #334155', borderRadius: '10px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' },
   priceAmount: { fontSize: '1.5rem', fontWeight: '800', color: '#10b981' },
   submitBtn: { background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', border: 'none', padding: '0.9rem', borderRadius: '8px', fontWeight: '700', fontSize: '1rem', cursor: 'pointer', marginTop: '0.5rem' },
-  signedOutBox: { textAlign: 'center', padding: '2rem', background: '#0f172a', borderRadius: '10px', color: '#cbd5e1', border: '1px dashed #334155' }
+  signedOutBox: { textAlign: 'center', padding: '2rem', background: '#0f172a', borderRadius: '10px', color: '#cbd5e1', border: '1px dashed #334155' },
+  chatWrapper: { position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 1000 },
+  chatToggleBtn: { background: '#2563eb', color: '#fff', border: 'none', padding: '0.8rem 1.25rem', borderRadius: '30px', fontWeight: '600', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)', cursor: 'pointer' },
+  chatBox: { width: '320px', height: '400px', background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4)', overflow: 'hidden' },
+  chatHeader: { background: '#0f172a', padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '600', fontSize: '0.9rem', borderBottom: '1px solid #334155' },
+  closeChatBtn: { background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1rem' },
+  chatBody: { flex: 1, padding: '1rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+  chatBubble: { maxWidth: '80%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.85rem', color: '#fff' },
+  chatFooter: { padding: '0.5rem', background: '#0f172a', display: 'flex', gap: '0.5rem', borderTop: '1px solid #334155' },
+  chatInput: { flex: 1, background: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '0.4rem 0.6rem', color: '#fff', fontSize: '0.85rem', outline: 'none' },
+  sendBtn: { background: '#2563eb', color: '#fff', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer' }
 };
