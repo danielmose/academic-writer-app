@@ -21,6 +21,13 @@ export default function App() {
     }
   ]);
 
+  // Admin Rating & Review Management State
+  const [reviews, setReviews] = useState([
+    { id: 1, student: 'Alex J.', rating: 5, comment: 'Fast response and perfect formatting!', date: '2026-08-21' },
+    { id: 2, student: 'Anonymous', rating: 2, comment: 'Needed revision on slide notes.', date: '2026-08-20' },
+    { id: 3, student: 'Sarah M.', rating: 5, comment: 'A+ quality work, delivered early.', date: '2026-08-19' }
+  ]);
+
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [messages, setMessages] = useState({
     'student1@university.edu': [
@@ -59,6 +66,11 @@ export default function App() {
     }));
   };
 
+  // Delete Rating Handler
+  const handleDeleteReview = (id) => {
+    setReviews(reviews.filter(rev => rev.id !== id));
+  };
+
   if (!isLoaded) return <div style={{ color: '#fff', padding: '2rem', textAlign: 'center' }}>Loading...</div>;
 
   return (
@@ -83,26 +95,30 @@ export default function App() {
       {isAdmin ? (
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           {/* STATS OVERVIEW HEADER */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
             <div style={{ background: '#1c2541', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #4361ee' }}>
               <div style={{ fontSize: '0.8rem', color: '#a0aec0' }}>Active Assignments</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#4cc9f0' }}>{orders.filter(o => o.status !== 'Completed').length}</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#4cc9f0' }}>{orders.filter(o => o.status !== 'Completed').length}</div>
             </div>
             <div style={{ background: '#1c2541', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
               <div style={{ fontSize: '0.8rem', color: '#a0aec0' }}>Total Revenue</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>$100</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#10b981' }}>$100</div>
             </div>
-            <div style={{ background: '#1c2541', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #f72585', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ background: '#1c2541', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #f72585' }}>
+              <div style={{ fontSize: '0.8rem', color: '#a0aec0' }}>Published Reviews</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#f72585' }}>{reviews.length}</div>
+            </div>
+            <div style={{ background: '#1c2541', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #7209b7', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontSize: '0.8rem', color: '#a0aec0' }}>Database Link</div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#fff' }}>Google Sheets</div>
+                <div style={{ fontSize: '0.8rem', color: '#a0aec0' }}>Database</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#fff' }}>Google Sheets</div>
               </div>
-              <a href="https://sheets.google.com" target="_blank" rel="noreferrer" style={{ background: '#10b981', color: '#fff', padding: '0.4rem 0.7rem', borderRadius: '4px', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 'bold' }}>Open ?</a>
+              <a href="https://sheets.google.com" target="_blank" rel="noreferrer" style={{ background: '#10b981', color: '#fff', padding: '0.35rem 0.6rem', borderRadius: '4px', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 'bold' }}>Open ?</a>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: selectedStudent ? '1fr 1fr' : '1fr', gap: '1rem' }}>
-            {/* MANAGEMENT TABLE / LIST */}
+          <div style={{ display: 'grid', gridTemplateColumns: selectedStudent ? '1fr 1fr' : '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            {/* ORDER MANAGEMENT */}
             <div style={{ background: '#1c2541', padding: '1.25rem', borderRadius: '8px' }}>
               <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>Order Management & Submissions</h4>
               {orders.map((ord) => (
@@ -129,8 +145,8 @@ export default function App() {
               ))}
             </div>
 
-            {/* LIVE CHAT PANEL */}
-            {selectedStudent && (
+            {/* LIVE CHAT OR RATINGS MODERATION PANEL */}
+            {selectedStudent ? (
               <div style={{ background: '#1c2541', padding: '1.25rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #2d3748', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
@@ -150,6 +166,28 @@ export default function App() {
                   <input type="text" placeholder="Type message..." value={replyText} onChange={(e) => setReplyText(e.target.value)} style={{ flex: 1, padding: '0.5rem', background: '#0b132b', color: '#fff', border: '1px solid #2d3748', borderRadius: '4px' }} />
                   <button onClick={() => handleSendMessage(selectedStudent.clientEmail)} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '0.5rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Send</button>
                 </div>
+              </div>
+            ) : (
+              /* RATINGS MODERATION PANEL */
+              <div style={{ background: '#1c2541', padding: '1.25rem', borderRadius: '8px' }}>
+                <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#f72585' }}>Moderate Ratings & Reviews</h4>
+                {reviews.length === 0 ? (
+                  <p style={{ color: '#a0aec0', fontSize: '0.9rem' }}>No student reviews active.</p>
+                ) : (
+                  reviews.map((rev) => (
+                    <div key={rev.id} style={{ background: '#0b132b', padding: '0.8rem 1rem', borderRadius: '6px', border: '1px solid #2d3748', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: '0.85rem', color: '#ffb703', fontWeight: 'bold' }}>
+                          {'?'.repeat(rev.rating)}{'?'.repeat(5 - rev.rating)} <span style={{ color: '#a0aec0', fontSize: '0.75rem', marginLeft: '0.5rem' }}>by {rev.student} ({rev.date})</span>
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: '#e2e8f0', marginTop: '0.25rem' }}>"{rev.comment}"</div>
+                      </div>
+                      <button onClick={() => handleDeleteReview(rev.id)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '0.35rem 0.65rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer' }}>
+                        Delete
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </div>
